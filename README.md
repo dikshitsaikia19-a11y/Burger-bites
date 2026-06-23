@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Delicious Bites Ordering</title>
+  <title>BurgerBites Ordering</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,12 +12,12 @@
       text-align: center;
       margin: 0;
       padding: 20px;
-      position: relative; /* Needed for the admin button positioning */
+      position: relative;
     }
     
     h1 {
       color: #e65100;
-      margin-top: 40px; /* Pushed down slightly to make room for admin button */
+      margin-top: 40px;
     }
 
     /* --- ADMIN BUTTON STYLES --- */
@@ -39,7 +39,7 @@
     }
 
     #admin-panel {
-      display: none; /* Hidden by default */
+      display: none;
       background-color: #ffe0b2;
       border: 2px dashed #e65100;
       border-radius: 10px;
@@ -49,7 +49,7 @@
     }
 
     .admin-controls button {
-      background-color: #d32f2f;
+      background-color: #2e7d32;
       margin: 5px;
     }
     /* --------------------------- */
@@ -69,6 +69,9 @@
       padding: 20px;
       width: 200px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
     .price {
@@ -86,10 +89,27 @@
       cursor: pointer;
       font-weight: bold;
       margin-top: 10px;
+      width: 100%;
     }
 
     button:hover {
       background-color: #e65100;
+    }
+
+    /* DELETE BUTTON (Hidden by default) */
+    .delete-btn {
+      display: none; 
+      background-color: #d32f2f;
+      margin-top: 10px;
+    }
+
+    .delete-btn:hover {
+      background-color: #b71c1c;
+    }
+
+    /* When Admin is logged in, show the delete buttons! */
+    .admin-mode .delete-btn {
+      display: block; 
     }
 
     .cart-section {
@@ -130,33 +150,17 @@
 
   <div id="admin-panel">
     <h2>🛠️ Admin Dashboard</h2>
-    <p><em>Note: Since this runs without a database, items added here will disappear if the page is refreshed. To make them permanent, edit the code directly!</em></p>
+    <p><em>Your database is LIVE! You can now add new items or delete existing ones below.</em></p>
     <div class="admin-controls">
       <button onclick="adminAddItem()">➕ Add New Item</button>
     </div>
   </div>
 
-  <h1>🍔 Delicious Bites Restaurant</h1>
+  <h1>🍔 BurgerBites Restaurant</h1>
   <p>Click "Add to Order" to choose your food, then send it to our kitchen!</p>
 
   <div class="menu-container" id="menu-container">
-    <div class="menu-item">
-      <h2>Cheese Pizza</h2>
-      <p class="price">₹250</p>
-      <button onclick="addToOrder('Cheese Pizza', 250)">Add to Order</button>
-    </div>
-
-    <div class="menu-item">
-      <h2>Veggie Burger</h2>
-      <p class="price">₹120</p>
-      <button onclick="addToOrder('Veggie Burger', 120)">Add to Order</button>
-    </div>
-
-    <div class="menu-item">
-      <h2>French Fries</h2>
-      <p class="price">₹90</p>
-      <button onclick="addToOrder('French Fries', 90)">Add to Order</button>
-    </div>
+    <p>Loading menu from database...</p>
   </div>
 
   <div class="cart-section">
@@ -173,59 +177,69 @@
     <button onclick="sendToKitchen()">Send Order via WhatsApp</button>
   </div>
 
-  <script>
-    // --- ADMIN JAVASCRIPT ---
-    const ADMIN_PIN = "3645"; // <--- YOUR CUSTOM PIN IS SET HERE
+  <script type="module">
+    // 1. Import Firebase tools (Added deleteDoc and doc)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    function openAdmin() {
-      let enteredPin = prompt("Please enter the Admin PIN:");
+    // 2. Your Firebase Keys
+    const firebaseConfig = {
+      apiKey: "AIzaSyBg0OfggCb2vWQFuCPaUBtFCXG5_fh3GuQ",
+      authDomain: "burgerbites-7299e.firebaseapp.com",
+      projectId: "burgerbites-7299e",
+      storageBucket: "burgerbites-7299e.firebasestorage.app",
+      messagingSenderId: "125414622245",
+      appId: "1:125414622245:web:20e519ee02fb7f0a53abcc",
+      measurementId: "G-FHKNFZCRZK"
+    };
+
+    // 3. Start Firebase and Database
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // --- LOAD MENU FROM FIREBASE IN REAL-TIME ---
+    const menuContainer = document.getElementById('menu-container');
+    
+    onSnapshot(collection(db, "menuItems"), (snapshot) => {
+      menuContainer.innerHTML = ""; 
       
-      if (enteredPin === ADMIN_PIN) {
-        document.getElementById('admin-panel').style.display = "block";
-      } else if (enteredPin !== null) {
-        alert("Incorrect PIN! Access Denied.");
-      }
-    }
-
-    function adminAddItem() {
-      let newItemName = prompt("Enter the name of the new food item:");
-      if (!newItemName) return; // Stop if they cancel
-
-      let newItemPrice = prompt("Enter the price in Rupees (Numbers only!):");
-      if (!newItemPrice || isNaN(newItemPrice)) {
-        alert("Invalid price! Please enter numbers only.");
-        return;
+      if (snapshot.empty) {
+        menuContainer.innerHTML = "<p>Menu is empty! Please log into Admin Control to add food items.</p>";
       }
 
-      // Convert price to a number
-      let priceNumber = parseInt(newItemPrice);
+      snapshot.forEach((firestoreDoc) => {
+        let item = firestoreDoc.data();
+        let docId = firestoreDoc.id; // Get the specific Firebase ID for deleting
 
-      // Create the new HTML block for the item
-      let newDiv = document.createElement("div");
-      newDiv.className = "menu-item";
-      newDiv.innerHTML = `
-        <h2>${newItemName}</h2>
-        <p class="price">₹${priceNumber}</p>
-        <button onclick="addToOrder('${newItemName}', ${priceNumber})">Add to Order</button>
-      `;
+        let newDiv = document.createElement("div");
+        newDiv.className = "menu-item";
+        
+        // Added the hidden delete button that passes the unique ID
+        newDiv.innerHTML = `
+          <div>
+            <h2>${item.name}</h2>
+            <p class="price">₹${item.price}</p>
+          </div>
+          <div>
+            <button onclick="addToOrder('${item.name}', ${item.price})">Add to Order</button>
+            <button class="delete-btn" onclick="deleteItem('${docId}', '${item.name}')">🗑️ Delete</button>
+          </div>
+        `;
+        menuContainer.appendChild(newDiv);
+      });
+    });
 
-      // Add it to the screen dynamically
-      document.getElementById('menu-container').appendChild(newDiv);
-      alert(newItemName + " has been added to the menu successfully!");
-    }
-    // ------------------------
-
-    // --- CART AND WHATSAPP JAVASCRIPT ---
+    // --- CART SYSTEM ---
     let orderItems = [];
     let orderTotal = 0;
 
-    function addToOrder(itemName, itemPrice) {
+    window.addToOrder = function(itemName, itemPrice) {
       orderItems.push(itemName);
       orderTotal += itemPrice;
-      updateCartDisplay();
-    }
+      window.updateCartDisplay();
+    };
 
-    function updateCartDisplay() {
+    window.updateCartDisplay = function() {
       const listElement = document.getElementById('order-list');
       listElement.innerHTML = ""; 
 
@@ -234,23 +248,20 @@
         listItem.innerText = orderItems[i];
         listElement.appendChild(listItem);
       }
-
       document.getElementById('total-price').innerText = orderTotal;
-    }
+    };
 
-    function sendToKitchen() {
+    window.sendToKitchen = function() {
       if (orderItems.length === 0) {
         alert("Please add some food to your order first!");
         return;
       }
-
       const addressInput = document.getElementById('customer-address').value.trim();
       if (addressInput === "") {
         alert("Please enter your delivery address!");
         return;
       }
 
-      // Format the WhatsApp message
       let orderMessage = "🍔 NEW RESTAURANT ORDER 🍔\n\n";
       for (let i = 0; i < orderItems.length; i++) {
         orderMessage += "- " + orderItems[i] + "\n";
@@ -258,24 +269,74 @@
       orderMessage += "\n💰 Total: ₹" + orderTotal;
       orderMessage += "\n\n📍 Delivery Address:\n" + addressInput;
 
-      // YOUR ACTUAL WHATSAPP NUMBER IS SET HERE:
       const myPhoneNumber = "916000870839"; 
-
-      // Create link and open WhatsApp
       const encodedMessage = encodeURIComponent(orderMessage);
       const whatsappUrl = "https://wa.me/" + myPhoneNumber + "?text=" + encodedMessage;
 
       window.open(whatsappUrl, '_blank');
 
-      // Clear the cart after sending
       orderItems = [];
       orderTotal = 0;
       document.getElementById('order-list').innerHTML = "<li><em>No items added yet.</em></li>";
       document.getElementById('total-price').innerText = "0";
       document.getElementById('customer-address').value = "";
-    }
+    };
+
+    // --- ADMIN SYSTEM ---
+    const ADMIN_PIN = "3645"; 
+
+    window.openAdmin = function() {
+      let enteredPin = prompt("Please enter the Admin PIN:");
+      if (enteredPin === ADMIN_PIN) {
+        document.getElementById('admin-panel').style.display = "block";
+        
+        // This makes all the hidden delete buttons appear!
+        document.body.classList.add('admin-mode'); 
+      } else if (enteredPin !== null) {
+        alert("Incorrect PIN! Access Denied.");
+      }
+    };
+
+    window.adminAddItem = async function() {
+      let newItemName = prompt("Enter the name of the new food item:");
+      if (!newItemName) return; 
+
+      let newItemPrice = prompt("Enter the price in Rupees (Numbers only!):");
+      if (!newItemPrice || isNaN(newItemPrice)) {
+        alert("Invalid price! Please enter numbers only.");
+        return;
+      }
+
+      let priceNumber = parseInt(newItemPrice);
+
+      try {
+        await addDoc(collection(db, "menuItems"), {
+          name: newItemName,
+          price: priceNumber
+        });
+        // No alert needed, it will magically pop onto the screen!
+      } catch (error) {
+        alert("Error saving item: " + error.message);
+      }
+    };
+
+    // --- NEW: DELETE ITEM FUNCTION ---
+    window.deleteItem = async function(docId, itemName) {
+      // Ask for confirmation so you don't accidentally delete something
+      let confirmDelete = confirm("Are you sure you want to permanently delete " + itemName + "?");
+      
+      if (confirmDelete) {
+        try {
+          await deleteDoc(doc(db, "menuItems", docId));
+          // Firebase will automatically remove it from the screen!
+        } catch (error) {
+          alert("Error deleting item: " + error.message);
+        }
+      }
+    };
   </script>
 
 </body>
 </html>
-      
+    
+    
