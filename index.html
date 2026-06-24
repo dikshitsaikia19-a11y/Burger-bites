@@ -1,1 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BurgerBites Delivery</title>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --zomato-red: #E23744;
+      --bg-color: #f4f5f7;
+      --text-main: #1c1c1c;
+      --text-muted: #696969;
+      --card-bg: #ffffff;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      margin: 0;
+      padding: 0;
+      position: relative;
+      padding-bottom: 50px;
+    }
+    
+    h1, h2, h3 { margin: 0; }
+
+    /* --- ZOMATO STYLE HEADER & TOP SECTION --- */
+    .app-header {
+      background-color: var(--card-bg);
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .location-header {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .location-header .title { font-weight: 800; font-size: 1.2em; display: flex; align-items: center; gap: 5px; }
+    .location-header .subtitle { color: var(--text-muted); font-size: 0.85em; margin-top: 2px; }
+    
+    .profile-pic {
+      width: 40px;
+      height: 40px;
+      background-color: #ddd;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2em;
+    }
+
+    .search-bar-container {
+      background-color: var(--card-bg);
+      padding: 10px 20px 20px 20px;
+    }
+
+    .fake-search-bar {
+      background-color: #f3f4f6;
+      border-radius: 12px;
+      padding: 12px 15px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      font-size: 0.95em;
+      border: 1px solid #e5e7eb;
+    }
+
+    /* --- LOGIN SCREEN --- */
+    #login-screen {
+      background-color: var(--card-bg);
+      border-radius: 20px;
+      padding: 40px 20px;
+      max-width: 400px;
+      margin: 80px auto;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+    .google-btn {
+      background-color: #4285F4;
+      color: white;
+      font-size: 1.1em;
+      font-weight: bold;
+      padding: 15px;
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* --- MAIN APP UI --- */
+    #main-app { display: none; }
+
+    /* ADMIN BUTTON */
+    .admin-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #333;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      z-index: 999;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    #admin-panel {
+      display: none;
+      background-color: #ffe0b2;
+      border: 2px dashed #e65100;
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px;
+    }
+
+    /* ZOMATO STYLE MENU FEED */
+    .section-title {
+      padding: 20px 20px 5px 20px;
+      font-size: 1.1em;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .menu-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      padding: 0 20px;
+    }
+
+    .menu-item {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .menu-details h2 { font-size: 1.1em; margin-bottom: 5px; }
+    .price { font-weight: 700; color: var(--text-main); font-size: 1em; }
+    
+    /* Zomato Add Button */
+    .add-btn {
+      background-color: #fff1f2;
+      color: var(--zomato-red);
+      border: 1px solid var(--zomato-red);
+      padding: 8px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9em;
+      text-transform: uppercase;
+    }
+
+    .delete-btn { display: none; background-color: #d32f2f; color: white; margin-top: 10px; border: none; padding: 5px 10px; border-radius: 5px; width: 100%;}
+    .admin-mode .delete-btn { display: block; }
+
+    /* CART & CHECKOUT SECTIONS */
+    .zomato-card {
+      background-color: var(--card-bg);
+      border-radius: 16px;
+      padding: 20px;
+      margin: 20px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    ul { list-style-type: none; padding: 0; margin: 0; }
+    li { padding: 10px 0; border-bottom: 1px dashed #e5e7eb; display: flex; justify-content: space-between;}
+    li:last-child { border-bottom: none; }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.2em;
+      font-weight: 800;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 2px solid #f3f4f6;
+    }
+
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-family: inherit;
+      background-color: #f9fafb;
+    }
+
+    .primary-btn {
+      background-color: var(--zomato-red);
+      color: white;
+      border: none;
+      padding: 15px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.1em;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    .secondary-btn {
+      background-color: white;
+      color: var(--text-main);
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.1em;
+      width: 100%;
+      margin-top: 15px;
+    }
+
+    /* PAYMENT SCREENS */
+    #payment-screen, #success-screen { display: none; }
+    
+    #upi-details {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 12px;
+      background-color: #f8f9fa;
+      border: 1px solid #e5e7eb;
+    }
+    
+    .upi-box {
+      background-color: white;
+      padding: 15px;
+      font-size: 1.1em;
+      font-weight: bold;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin: 15px 0;
+      color: var(--text-main);
+      text-align: center;
+    }
+
+    .contact-btn {
+      text-decoration: none; color: white; padding: 12px 20px; border-radius: 8px; font-weight: bold; margin: 5px; display: inline-block; text-align: center;
+    }
+    .call-btn { background-color: #1976D2; width: 40%;}
+    .msg-btn { background-color: #25D366; width: 40%;}
+  </style>
+</head>
+<body>
+
+  <div id="login-screen">
+    <div style="font-size: 3em; margin-bottom: 10px;">🍔</div>
+    <h2 style="font-size: 1.8em; font-weight: 800;">BurgerBites</h2>
+    <p style="color: var(--text-muted); margin-top: 5px;">India's tastiest burgers, delivered.</p>
+    
+    <button class="google-btn" onclick="loginWithGoogle()">
+      <span style="background: white; padding: 5px; border-radius: 50%; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; color: #4285F4;">G</span>
+      Continue with Google
+    </button>
+  </div>
+
+  <div id="main-app">
+    <button class="admin-btn" onclick="openAdmin()">⚙️ Admin</button>
+
+    <div class="app-header">
+      <div class="location-header">
+        <div class="title">📍 Home <span>⌄</span></div>
+        <div class="subtitle">Guwahati, Assam, India</div>
+      </div>
+      <div class="profile-pic">👤</div>
+    </div>
+
+    <div class="search-bar-container" id="search-section">
+      <div class="fake-search-bar">
+        🔍 Restaurant name or dish...
+      </div>
+    </div>
+
+    <div id="admin-panel">
+      <h2>🛠️ Admin Dashboard</h2>
+      <button class="primary-btn" onclick="adminAddItem()">➕ Add New Item</button>
+    </div>
+
+    <div class="section-title" id="menu-header">RECOMMENDED FOR YOU</div>
+    <div class="menu-container" id="menu-container">
+      <p style="text-align: center; color: #666;">Loading menu...</p>
+    </div>
+
+    <div class="zomato-card" id="cart-section">
+      <h2 style="font-size: 1.2em; margin-bottom: 15px;">🧾 Bill Details</h2>
+      <ul id="order-list"><li><em>No items added yet.</em></li></ul>
+      
+      <div class="total-row">
+        <span>Grand Total</span>
+        <span>₹<span id="total-price">0</span></span>
+      </div>
+      
+      <h3 style="font-size: 1em; margin-top: 20px; color: var(--text-muted);">Delivery Details</h3>
+      <textarea id="customer-address" rows="3" placeholder="Enter complete address, floor, building..."></textarea>
+      
+      <button class="primary-btn" onclick="showPaymentScreen()">Select Payment Method</button>
+    </div>
+
+    <div class="zomato-card" id="payment-screen">
+      <h2 style="font-size: 1.4em; margin-bottom: 20px;">Payment Options</h2>
+      
+      <div id="payment-options">
+        <button class="secondary-btn" onclick="processOrder('Cash on Delivery')" style="text-align: left; display: flex; justify-content: space-between;">
+          <span>💵 Cash on Delivery</span>
+          <span style="color: var(--zomato-red);">Pay ></span>
+        </button>
+        <button class="secondary-btn" onclick="showUPIDetails()" style="text-align: left; display: flex; justify-content: space-between;">
+          <span>📱 Pay via UPI</span>
+          <span style="color: var(--zomato-red);">Pay ></span>
+        </button>
+      </div>
+
+      <div id="upi-details">
+        <p style="margin: 0; color: var(--text-muted);">Scan or Pay to this UPI ID:</p>
+        <div class="upi-box">YOUR-UPI-ID-HERE@okhdfcbank</div>
+        
+        <div style="background: #eef2ff; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+          <p style="margin:0; font-weight: bold; color: #1976D2;">Amount to Pay: ₹<span id="upi-total">0</span></p>
+        </div>
+        
+        <button class="primary-btn" onclick="processOrder('UPI Online Payment')">✅ I Have Paid (Confirm)</button>
+      </div>
+
+      <button class="secondary-btn" onclick="goBackToCart()" style="border: none; background: transparent; color: var(--text-muted);">Cancel Payment</button>
+    </div>
+
+    <div class="zomato-card" id="success-screen" style="text-align: center; padding: 40px 20px;">
+      <div style="font-size: 4em; margin-bottom: 10px;">✅</div>
+      <h2 style="color: #2E7D32; font-size: 1.8em;">Order Placed!</h2>
+      <p style="color: var(--text-muted); margin-bottom: 30px;">Make sure to press "Send" in WhatsApp to confirm your food.</p>
+      
+      <div style="display: flex; justify-content: center; gap: 10px;">
+        <a href="tel:+916000870839" class="contact-btn call-btn">📞 Call</a>
+        <a href="https://wa.me/916000870839" class="contact-btn msg-btn">💬 Message</a>
+      </div>
+      <button class="secondary-btn" onclick="goBackToMenu()">Back to Home</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBg0OfggCb2vWQFuCPaUBtFCXG5_fh3GuQ",
+      authDomain: "burgerbites-7299e.firebaseapp.com",
+      projectId: "burgerbites-7299e",
+      storageBucket: "burgerbites-7299e.firebasestorage.app",
+      messagingSenderId: "125414622245",
+      appId: "1:125414622245:web:20e519ee02fb7f0a53abcc",
+      measurementId: "G-FHKNFZCRZK"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById('login-screen').style.display = "none";
+        document.getElementById('main-app').style.display = "block";
+      } else {
+        document.getElementById('login-screen').style.display = "block";
+        document.getElementById('main-app').style.display = "none";
+      }
+    });
+
+    window.loginWithGoogle = function() {
+      const provider = new GoogleAuthProvider();
+      signInWithPopup(auth, provider).catch((error) => alert("Login Failed: " + error.message));
+    };
+
+    const menuContainer = document.getElementById('menu-container');
+    
+    onSnapshot(collection(db, "menuItems"), (snapshot) => {
+      menuContainer.innerHTML = ""; 
+      if (snapshot.empty) menuContainer.innerHTML = "<p style='text-align:center;'>Menu is empty!</p>";
+      snapshot.forEach((firestoreDoc) => {
+        let item = firestoreDoc.data();
+        let docId = firestoreDoc.id; 
+        let newDiv = document.createElement("div");
+        newDiv.className = "menu-item";
+        newDiv.innerHTML = `
+          <div class="menu-details">
+            <h2>${item.name}</h2>
+            <p class="price">₹${item.price}</p>
+          </div>
+          <div>
+            <button class="add-btn" onclick="addToOrder('${item.name}', ${item.price})">ADD</button>
+            <button class="delete-btn" onclick="deleteItem('${docId}', '${item.name}')">🗑️ Remove</button>
+          </div>`;
+        menuContainer.appendChild(newDiv);
+      });
+    });
+
+    let orderItems = []; let orderTotal = 0;
+
+    window.addToOrder = function(name, price) {
+      orderItems.push(name); orderTotal += price; window.updateCartDisplay();
+    };
+
+    window.updateCartDisplay = function() {
+      const list = document.getElementById('order-list'); list.innerHTML = ""; 
+      for (let i = 0; i < orderItems.length; i++) {
+        let li = document.createElement('li'); 
+        li.innerHTML = `<span>${orderItems[i]}</span>`; 
+        list.appendChild(li);
+      }
+      document.getElementById('total-price').innerText = orderTotal;
+    };
+
+    window.showPaymentScreen = function() {
+      if (orderItems.length === 0) return alert("Please add food to your bill first!");
+      if (document.getElementById('customer-address').value.trim() === "") return alert("Please enter your delivery details!");
+      
+      document.getElementById('payment-options').style.display = "block";
+      document.getElementById('upi-details').style.display = "none";
+      document.getElementById('upi-total').innerText = orderTotal;
+
+      document.getElementById('menu-container').style.display = "none";
+      document.getElementById('menu-header').style.display = "none";
+      document.getElementById('search-section').style.display = "none";
+      document.getElementById('cart-section').style.display = "none";
+      document.getElementById('payment-screen').style.display = "block";
+    };
+
+    window.showUPIDetails = function() {
+      document.getElementById('payment-options').style.display = "none";
+      document.getElementById('upi-details').style.display = "block";
+    };
+
+    window.processOrder = function(paymentMethod) {
+      const address = document.getElementById('customer-address').value.trim();
+      let msg = "🍔 NEW ORDER 🍔\n\n";
+      for (let i = 0; i < orderItems.length; i++) msg += "- " + orderItems[i] + "\n";
+      msg += "\n💰 Total: ₹" + orderTotal + "\n💳 Mode: " + paymentMethod + "\n📍 Address:\n" + address;
+      
+      if (paymentMethod === 'UPI Online Payment') {
+        msg += "\n\n(Customer claims they paid via UPI. Please verify your bank/wallet!)";
+      }
+      
+      window.open("https://wa.me/916000870839?text=" + encodeURIComponent(msg), '_blank');
+      
+      document.getElementById('payment-screen').style.display = "none";
+      document.getElementById('success-screen').style.display = "block";
+      
+      orderItems = []; orderTotal = 0;
+      document.getElementById('order-list').innerHTML = "<li><em>No items added yet.</em></li>";
+      document.getElementById('total-price').innerText = "0";
+      document.getElementById('customer-address').value = "";
+    };
+
+    window.goBackToCart = function() {
+      document.getElementById('payment-screen').style.display = "none";
+      document.getElementById('menu-header').style.display = "block";
+      document.getElementById('search-section').style.display = "block";
+      document.getElementById('menu-container').style.display = "flex";
+      document.getElementById('cart-section').style.display = "block";
+    };
+
+    window.goBackToMenu = function() {
+      document.getElementById('success-screen').style.display = "none";
+      document.getElementById('menu-header').style.display = "block";
+      document.getElementById('search-section').style.display = "block";
+      document.getElementById('menu-container').style.display = "flex";
+      document.getElementById('cart-section').style.display = "block";
+    };
+
+    const ADMIN_PIN = "3645"; 
+    window.openAdmin = function() {
+      if (prompt("Admin PIN:") === ADMIN_PIN) {
+        document.getElementById('admin-panel').style.display = "block";
+        document.body.classList.add('admin-mode'); 
+      } else alert("Denied.");
+    };
+
+    window.adminAddItem = async function() {
+      let name = prompt("Food name:"); if (!name) return; 
+      let price = prompt("Price (Numbers only):"); if (!price || isNaN(price)) return alert("Invalid price");
+      try { await addDoc(collection(db, "menuItems"), { name: name, price: parseInt(price) }); } 
+      catch (e) { alert("Error: " + e.message); }
+    };
+
+    window.deleteItem = async function(docId, name) {
+      if (confirm("Delete " + name + "?")) {
+        try { await deleteDoc(doc(db, "menuItems", docId)); } 
+        catch (e) { alert("Error: " + e.message); }
+      }
+    };
+  </script>
+
+</body>
+</html>
 
